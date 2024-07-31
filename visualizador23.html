@@ -1,0 +1,240 @@
+<html>
+    <head></head>
+    <body>
+        <canvas id="myCanvas" width="1000" height="600" style="border: 1px solid #d3d3d3">
+            Your browser does not support the HTML canvas tag.</canvas
+        >
+    </body>
+    <script>
+        var canvas = document.getElementById("myCanvas");
+        var canvasWidth = canvas.width;
+        var canvasHeight = canvas.height;
+        var ctx = canvas.getContext("2d");
+
+        var nodeCoordSection = `
+            1 266 235 
+            2 295 272 
+            3 301 258 
+            4 309 260 
+            5 217 274 
+            6 218 278 
+            7 282 267 
+            8 242 249 
+            9 230 262 
+            10 249 268 
+            11 256 267 
+            12 265 257 
+            13 267 242 
+            14 259 265 
+            15 315 233 
+            16 329 252 
+            17 318 252 
+            18 329 224 
+            19 267 213 
+            20 275 192 
+            21 303 201 
+            22 208 217 
+            23 326 181 
+            24 229 198 
+            25 229 230 
+            26 229 262 
+            27 269 198 
+            28 269 230 
+            29 269 262 
+            30 309 198 
+            31 309 230 
+            32 309 262 
+        `;
+
+        let nodeArr = nodeCoordSection
+            .trim()
+            .split("\n")
+            .map((x) =>
+                x
+                    .trim()
+                    .split(" ")
+                    .map((y) => parseInt(y))
+            );
+
+        function euclidean_distance(i, j) {
+            let xd, yd;
+            let r = 0.0;
+            xd = nodeArr[i][1] - nodeArr[j][1];
+            yd = nodeArr[i][2] - nodeArr[j][2];
+            r = Math.sqrt(xd * xd + yd * yd);
+            return r;
+        }
+
+        function drawClient(x, y) {
+            ctx.beginPath();
+            ctx.arc(x, y, 2, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        function drawDepot(x, y) {
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.fillStyle = "red";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawStation(x, y) {
+            ctx.rect(x - 5, y - 5, 10, 10);
+            //ctx.fillStyle = "black";
+            ctx.stroke();
+            //ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawLine(xi, yi, xf, yf, cor) {
+            // Start a new Path
+            console.log("ctx.strokeStyle", ctx.strokeStyle);
+            let local_cor = ctx.strokeStyle;
+            ctx.strokeStyle = cor;
+            ctx.beginPath();
+            ctx.moveTo(xi, yi);
+            ctx.lineTo(xf, yf);
+            ctx.stroke();
+            ctx.closePath();
+            ctx.strokeStyle = local_cor;
+        }
+
+        function drawRange(x, y, range) {
+            ctx.beginPath();
+            ctx.arc(x, y, range, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        function canvas_arrow(context, fromx, fromy, tox, toy, cor) {
+            const dx = tox - fromx;
+            const dy = toy - fromy;
+            const headlen = 10; //Math.sqrt( dx * dx + dy * dy ) * 0.3; // length of head in pixels
+            const angle = Math.atan2(dy, dx);
+
+            let local_cor = ctx.strokeStyle;
+            ctx.strokeStyle = cor;
+
+            context.beginPath();
+            context.moveTo(fromx, fromy);
+            context.lineTo(tox, toy);
+            context.stroke();
+            context.beginPath();
+            context.moveTo(
+                tox - headlen * Math.cos(angle - Math.PI / 6),
+                toy - headlen * Math.sin(angle - Math.PI / 6)
+            );
+            context.lineTo(tox, toy);
+            context.lineTo(
+                tox - headlen * Math.cos(angle + Math.PI / 6),
+                toy - headlen * Math.sin(angle + Math.PI / 6)
+            );
+            context.stroke();
+
+            ctx.strokeStyle = local_cor;
+        }
+
+        let maxX = 0;
+        let maxY = 0;
+        let minX = Number.MAX_SAFE_INTEGER;
+        let minY = Number.MAX_SAFE_INTEGER;
+        for (let i = 0; i < nodeArr.length; i++) {
+            let node = nodeArr[i];
+            let x = node[1];
+            let y = node[2];
+            if (x > maxX) {
+                maxX = x;
+            }
+            if (x < minX) {
+                minX = x;
+            }
+            if (y > maxY) {
+                maxY = y;
+            }
+            if (y < minY) {
+                minY = y;
+            }
+        }
+        let meioX = (minX + maxX) / 2;
+        let meioY = (minY + maxY) / 2;
+
+        let scale = 5.5;
+
+        // Solução de 582
+        // let tour = [
+        //     0, 12, 11, 6, 1, 2, 3, 16, 15, 14, 30, 17, 22, 20, 19, 26, 18, 0, 13, 10, 0, 21, 4, 5, 8, 25, 9, 7, 0,
+        // ];
+        // Solução correta de 586.2031020356883
+        let tour = [
+        0 , 12 , 11 , 6 , 1 , 2 , 3 , 16 , 15 , 14 , 30 , 17 , 22 , 20 , 19 , 26 , 18 , 0 , 21 , 4 , 5 , 8 , 25 , 9 , 7 , 0 , 10 , 13 , 0
+        ];
+        // Solução de referência  do pdf
+        // let tour = [
+        // 0,6,1,2,31,3,16,15,14,17,22,29,20,19,18,0,12,11,9,8,25,5,4,21,7,0,10,13,0
+        // ];
+
+        console.log("tour.length", tour.length);
+        const ENERGY_CAPACITY = 105;
+        const ENERGY_CONSUMPTION = 1.2;
+        const STATIONS = 9;
+        let range = (ENERGY_CAPACITY / ENERGY_CONSUMPTION) * scale;
+
+        for (let i = 0; i < nodeArr.length; i++) {
+            let node = nodeArr[i];
+            let x = (node[1] - meioX) * scale + 500;
+            let y = (meioY - node[2]) * scale + 300;
+            //console.log(x, y);
+            if (node[0] === 1) {
+                drawDepot(x, y);
+            } else if (node[0] > nodeArr.length - STATIONS) {
+                drawStation(x, y);
+            } else {
+                drawClient(x, y);
+            }
+            ctx.font = "13px Arial";
+            ctx.fillText(String(node[0] - 1), x, y - 5);
+        }
+
+        let cores = ["#ff00ff", "#000000", "#55cc22", "#ffcc00", "#0022ff"];
+        let cont = 0;
+        let cor = cores[0];
+        for (let i = 0; i < tour.length - 1; i++) {
+            let from_node = nodeArr[tour[i]];
+            let to_node = nodeArr[tour[i + 1]];
+            let energy = euclidean_distance(tour[i], tour[i + 1]) * ENERGY_CONSUMPTION;
+            console.log(tour[i], "->", tour[i + 1], energy.toFixed(1));
+
+            let xi = (from_node[1] - meioX) * scale + 500;
+            let yi = (meioY - from_node[2]) * scale + 300;
+
+            let xf = (to_node[1] - meioX) * scale + 500;
+            let yf = (meioY - to_node[2]) * scale + 300;
+
+            let xm = (xi + xf) / 2;
+            let ym = (yi + yf) / 2;
+
+            if (tour[i] === 0) {
+                cor = cores[cont];
+                if (cont > cores.length) {
+                    cont = 0;
+                }
+                cont++;
+            }
+
+            //drawLine(xi, yi, xf, yf, cor);
+            canvas_arrow(ctx, xi, yi, xf, yf, cor);
+
+            // Exibe os consumos de energia de cada arco
+            //ctx.font = "13px Arial";
+            //ctx.fillText("[" + energy.toFixed(1) + "]", xm, ym);
+        }
+
+        // let to_node = nodeArr[57];
+        // let xi = (to_node[1] - meioX) * scale + 500;
+        // let yi = (meioY - to_node[2]) * scale + 300;
+        // drawRange(xi, yi, range);
+    </script>
+</html>

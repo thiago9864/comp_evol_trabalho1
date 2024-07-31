@@ -1,0 +1,30 @@
+{
+  "name": "trabalho-1",
+  "version": "1",
+  "description": "Trabalho da disciplina Computação Evolucionista do PPGMC",
+  "main": "index.js",
+  "author": "Thiago Almeida",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "rimraf ./build && tsc",
+    "start": "yarn build && node build/main.js",
+    "start:23": "yarn build && node build/main.js E-n23-k3.evrp",
+    "start:51": "yarn build && node build/main.js E-n51-k5.evrp",
+    "start:prof": "yarn build && node --prof build/main.js",
+    "start:time23": "yarn build && powershell -Command \"Measure-Command { node build/main.js -n23-k3.evrp }\"",
+    "start:time51": "yarn build && powershell -Command \"Measure-Command { node build/main.js -n51-k5.evrp }\"",
+    "start:dev": "npx nodemon",
+    "test": "yarn build && node build/tests.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "nodemon": "^3.1.4",
+    "rimraf": "5.0.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.3"
+  },
+  "dependencies": {
+    "pure-rand": "^6.1.0"
+  }
+}
